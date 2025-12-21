@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Review Generator (Updated)</title>
+    <title>Dynamic Review Generator (Final)</title>
     <style>
         /* Basic styling for better mobile view */
         body { 
@@ -19,7 +19,7 @@
             max-width: 600px; 
             border-radius: 10px; 
             background-color: #ffffff;
-            box-shadow: 0 4px 8px rgba: 0, 0, 0, 0.1;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         #copy-button { 
             padding: 12px 25px; 
@@ -53,17 +53,7 @@
             text-align: center;
         }
     </style>
-</head>
-<body>
-
-    <div class="review-box">
-        <h2>✨ আজকের বিশেষ গ্রাহক রিভিউ ✨</h2>
-        <p id="language-display"></p>
-        <p id="price-display"></p>
-        <div id="review-output">রিভিউ লোড হচ্ছে...</div>
-        <button id="copy-button">📝 রিভিউ কপি করুন ও Google-এ যান</button>
-    </div>
-
+    
     <script>
         // * আপনার দেওয়া ২২টি নতুন রিভিউ এখানে যোগ করা হয়েছে। *
         const reviews = [
@@ -98,26 +88,41 @@
         
         // ফাংশন যা এলোমেলোভাবে রিভিউ দেখাবে
         function displayRandomReview() {
+            const reviewOutputElement = document.getElementById('review-output');
+            const langDisplay = document.getElementById('language-display');
+            const priceDisplay = document.getElementById('price-display');
+
             if (reviews.length === 0) {
-                document.getElementById('review-output').innerText = "কোনো রিভিউ ডেটা পাওয়া যায়নি। অনুগ্রহ করে রিভিউ যোগ করুন।";
-                document.getElementById('language-display').innerText = ``;
-                document.getElementById('price-display').innerText = ``;
+                reviewOutputElement.innerText = "কোনো রিভিউ ডেটা পাওয়া যায়নি।";
+                langDisplay.innerText = ``;
+                priceDisplay.innerText = ``;
                 return;
             }
             
             const randomIndex = Math.floor(Math.random() * reviews.length);
             const review = reviews[randomIndex];
             
-            document.getElementById('review-output').innerText = review.text;
-            document.getElementById('language-display').innerText = ভাষা: ${review.lang};
-            document.getElementById('price-display').innerText = মূল্য পরিসর: ${review.price};
+            reviewOutputElement.innerText = review.text;
+            langDisplay.innerText = ভাষা: ${review.lang};
+            priceDisplay.innerText = মূল্য পরিসর: ${review.price};
         }
         
-        // ফাংশন যা রিভিউ কপি করবে এবং Google-এ রিডাইরেক্ট করবে (পরিবর্তন করা হয়েছে)
+        // ম্যানুয়াল টেক্সট কপি করার ফাংশন (ক্লিপবোর্ড API ব্যর্থ হলে)
+        function fallbackCopy(text) {
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = text;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            return true;
+        }
+
+        // ফাংশন যা রিভিউ কপি করবে এবং Google-এ রিডাইরেক্ট করবে
         function copyReview() {
             const reviewOutputElement = document.getElementById('review-output');
             
-            if (reviewOutputElement.innerText.includes("কোনো রিভিউ ডেটা পাওয়া যায়নি।")) {
+            if (reviewOutputElement.innerText.includes("কোনো রিভিউ ডেটা পাওয়া যায়নি।") || reviewOutputElement.innerText.includes("লোডিং")) {
                 alert("কপি করার জন্য কোনো রিভিউ নেই।");
                 return;
             }
@@ -128,30 +133,61 @@
             
             const reviewText = reviewOutputElement.innerText;
             // স্টার রেটিং বাদে বাকি অংশ কপি করবে
-            // Unicode রেঞ্জ (u2b50 থেকে u2b55) ব্যবহার করে স্টারগুলি মুছে দেওয়া হয়েছে
             const cleanText = reviewText.replace(/[\u2B50\u2B51\u2B52\u2B53\u2B54\u2B55\ufe0f]+/g, '').trim();
             
-            // Clipboard API ব্যবহার করে কপি করা
-            navigator.clipboard.writeText(cleanText).then(() => {
-                // কপি সফল হলে ইউজারকে জানাবে এবং Google-এ রিডাইরেক্ট করবে
-                alert('✅ রিভিউ কপি করা হয়েছে! এখন আপনাকে Google রিভিউ পেজে নিয়ে যাওয়া হচ্ছে। সেখানে রিভিউটি পেস্ট করে দিন।');
-                
-                // নতুন ট্যাবে Google রিভিউ পেজটি খুলুন
-                window.open(googleReviewLink, '_blank'); 
-                
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                alert('কপি করা সম্ভব হয়নি। অনুগ্রহ করে ম্যানুয়ালি কপি করুন। ওয়েবসাইটটি HTTPS-এ লোড হয়েছে কিনা নিশ্চিত করুন।');
-            });
+            
+            // প্রথমে আধুনিক Clipboard API দিয়ে চেষ্টা
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(cleanText).then(() => {
+                    alert('✅ রিভিউ কপি করা হয়েছে! এখন আপনাকে Google রিভিউ পেজে নিয়ে যাওয়া হচ্ছে। সেখানে রিভিউটি পেস্ট করে দিন।');
+                    window.open(googleReviewLink, '_blank'); 
+                }).catch(err => {
+                    // API ব্যর্থ হলে ম্যানুয়াল ফলব্যাক
+                    if (fallbackCopy(cleanText)) {
+                        alert('✅ রিভিউ কপি করা হয়েছে! (ফলব্যাক পদ্ধতি) এখন আপনাকে Google রিভিউ পেজে নিয়ে যাওয়া হচ্ছে। সেখানে রিভিউটি পেস্ট করে দিন।');
+                        window.open(googleReviewLink, '_blank'); 
+                    } else {
+                        console.error('Copy failed:', err);
+                        alert('কপি করা সম্ভব হয়নি। অনুগ্রহ করে ম্যানুয়ালি কপি করুন।');
+                    }
+                });
+            } else {
+                // ব্রাউজার পুরোনো বা insecure context হলে (HTTP)
+                if (fallbackCopy(cleanText)) {
+                    alert('✅ রিভিউ কপি করা হয়েছে! (ফলব্যাক পদ্ধতি) এখন আপনাকে Google রিভিউ পেজে নিয়ে যাওয়া হচ্ছে। সেখানে রিভিউটি পেস্ট করে দিন।');
+                    window.open(googleReviewLink, '_blank'); 
+                } else {
+                    alert('কপি করা সম্ভব হয়নি। অনুগ্রহ করে ম্যানুয়ালি কপি করুন।');
+                }
+            }
         }
         
-        // * পরিবর্তন: নিরাপদ লোডিং-এর জন্য window.onload এর পরিবর্তে DOMContentLoaded ব্যবহার করা হলো। *
+        // নিশ্চিত লোডিং: DOMContentLoaded ব্যবহার করা হলো
         document.addEventListener('DOMContentLoaded', function() {
             displayRandomReview();
-            document.getElementById('copy-button').addEventListener('click', copyReview);
+            
+            const copyButton = document.getElementById('copy-button');
+            if (copyButton) {
+                 copyButton.addEventListener('click', copyReview);
+            }
+
+            // ব্যবহারকারীকে ক্যাশে পরিষ্কার করার জন্য একটি মেসেজ
+            if (window.confirm("গুরুত্বপূর্ণ: যদি রিভিউ লোড না হয়, অনুগ্রহ করে 'OK' ক্লিক করে পেজটি হার্ড রিফ্রেশ (Ctrl+Shift+R) করুন।")) {
+                // এটি শুধুমাত্র একবার দেখানো হবে
+            }
         });
 
     </script>
+</head>
+<body>
+
+    <div class="review-box">
+        <h2>✨ আজকের বিশেষ গ্রাহক রিভিউ ✨</h2>
+        <p id="language-display"></p>
+        <p id="price-display"></p>
+        <div id="review-output">রিভিউ লোড হচ্ছে...</div>
+        <button id="copy-button">📝 রিভিউ কপি করুন ও Google-এ যান</button>
+    </div>
 
 </body>
 </html>
