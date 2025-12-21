@@ -19,7 +19,7 @@
             max-width: 600px; 
             border-radius: 10px; 
             background-color: #ffffff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba: 0, 0, 0, 0.1;
         }
         #copy-button { 
             padding: 12px 25px; 
@@ -122,14 +122,16 @@
                 return;
             }
 
-            // ** এখানে আপনার Google Business Profile-এর রিভিউ লিঙ্কটি যোগ করুন **
-            const googleReviewLink = "https://search.google.com/local/writereview?placeid=ChIJCXFIo3ud-DkRpwnRAyAT3mY"; // !!! এই লিঙ্কটি পরিবর্তন করুন !!!
-            // ************************
+            // ** গুরুত্বপূর্ণ: এখানে আপনার Google Business Profile-এর রিভিউ লিঙ্কটি অবশ্যই যোগ করুন **
+            const googleReviewLink = "https://search.google.com/local/writereview?placeid=ChIJCXFIo3ud-DkRpwnRAyAT3mY"; // !!! এই লিঙ্কটি আপনার আসল লিঙ্ক দিয়ে পরিবর্তন করুন !!!
+            // *******************************
             
             const reviewText = reviewOutputElement.innerText;
             // স্টার রেটিং বাদে বাকি অংশ কপি করবে
-            const cleanText = reviewText.replace(/(\u2b50\ufe0f+)/g, '').trim(); 
+            // Unicode রেঞ্জ (u2b50 থেকে u2b55) ব্যবহার করে স্টারগুলি মুছে দেওয়া হয়েছে
+            const cleanText = reviewText.replace(/[\u2B50\u2B51\u2B52\u2B53\u2B54\u2B55\ufe0f]+/g, '').trim();
             
+            // Clipboard API ব্যবহার করে কপি করা
             navigator.clipboard.writeText(cleanText).then(() => {
                 // কপি সফল হলে ইউজারকে জানাবে এবং Google-এ রিডাইরেক্ট করবে
                 alert('✅ রিভিউ কপি করা হয়েছে! এখন আপনাকে Google রিভিউ পেজে নিয়ে যাওয়া হচ্ছে। সেখানে রিভিউটি পেস্ট করে দিন।');
@@ -139,15 +141,16 @@
                 
             }).catch(err => {
                 console.error('Copy failed:', err);
-                alert('কপি করা সম্ভব হয়নি। অনুগ্রহ করে ম্যানুয়ালি কপি করুন।');
+                alert('কপি করা সম্ভব হয়নি। অনুগ্রহ করে ম্যানুয়ালি কপি করুন। ওয়েবসাইটটি HTTPS-এ লোড হয়েছে কিনা নিশ্চিত করুন।');
             });
         }
         
-        // পেজ লোড হলেই ফাংশনটি চালু হবে
-        window.onload = function() {
+        // * পরিবর্তন: নিরাপদ লোডিং-এর জন্য window.onload এর পরিবর্তে DOMContentLoaded ব্যবহার করা হলো। *
+        document.addEventListener('DOMContentLoaded', function() {
             displayRandomReview();
             document.getElementById('copy-button').addEventListener('click', copyReview);
-        }
+        });
+
     </script>
 
 </body>
